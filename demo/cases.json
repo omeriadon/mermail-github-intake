@@ -61,7 +61,7 @@
       "contentTruncated": true,
       "subject": "Mobile sync sometimes loses edits",
       "from": "trusted@example.test",
-      "body": "Observed:\nAfter reconnecting, some local edits disappear.\n\n[message truncated before expected behavior and reproduction steps]"
+      "body": "Observed:\nAfter reconnecting, some local edits disappear.\n\n[message truncated before the triggering conditions and evidence]"
     },
     "existingIssues": []
   },
@@ -80,12 +80,12 @@
       "body": "Observed:\nSearch input no longer accepts keys after Escape.\n\nExpected:\nSearch should remain editable.\n\nSteps:\n1. Focus search\n2. Press Escape\n3. Type again\n\nEnvironment:\nWeb 4.8.1"
     },
     "existingIssues": [
-      {"number": 42, "title": "Search box stops responding after escape", "body": "Source: Mermail thread `thr_demo_005`, message `msg_demo_005`.\n<!-- mermail-github-intake:v1 fingerprint=sha256:older -->", "url": "https://github.com/example/acme/issues/42", "state": "open"}
+      {"number": 42, "title": "Search box stops responding after escape", "body": "Source: Mermail thread `thr_demo_005`, message `msg_demo_005`.", "url": "https://github.com/example/acme/issues/42", "state": "open"}
     ]
   },
   {
-    "name": "payload mutation invalidates approval",
-    "expectedState": "approval_stale",
+    "name": "effect mutation requires a new preview",
+    "expectedState": "awaiting_approval",
     "simulateApproval": true,
     "mutateAfterApproval": true,
     "report": {
@@ -102,7 +102,7 @@
     "existingIssues": []
   },
   {
-    "name": "uncertain write reconciles by fingerprint without retry",
+    "name": "uncertain write reconciles by source identity without retry",
     "expectedState": "created",
     "simulateApproval": true,
     "simulateWrite": "uncertain_one_match",
@@ -116,6 +116,22 @@
       "subject": "Keyboard shortcut opens settings twice",
       "from": "reporter@example.test",
       "body": "Observed:\nThe settings window opens twice when the shortcut is pressed once.\n\nExpected:\nOnly one settings window should open.\n\nSteps:\n1. Launch app\n2. Press the settings shortcut once\n\nEnvironment:\nmacOS 27.0, App 4.8.1"
+    },
+    "existingIssues": []
+  },
+  {
+    "name": "feature request is actionable without fake environment boilerplate",
+    "expectedState": "draft_ready",
+    "report": {
+      "threadId": "thr_demo_008",
+      "messageId": "msg_demo_008",
+      "scanStatus": "clean",
+      "senderAuthentication": "pass",
+      "contentOmitted": false,
+      "contentTruncated": false,
+      "subject": "Add CSV export for filtered results",
+      "from": "product-user@example.test",
+      "body": "Requested:\nAdd CSV export for the currently filtered result set.\n\nOutcome:\nI need to share exactly the subset I am viewing with teammates without exporting all rows and filtering again elsewhere."
     },
     "existingIssues": []
   }

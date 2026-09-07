@@ -4,6 +4,9 @@
 
 The core idea is a trust boundary: public email can become structured engineering work **without allowing an email sender to control the agent**.
 
+- Interactive demo: https://mermail-github-intake-omeriadons-projects.vercel.app
+- Official Mermail companion discussion: https://github.com/Nudgen-Marketing/mermail-skills/issues/190
+
 ## What it does
 
 ```text
@@ -80,20 +83,18 @@ npm test
 npm run demo
 ```
 
-The fixture contains a fake credential and an embedded prompt-injection attempt. The demo must:
+The demo exercises three policy outcomes:
 
-1. keep inbox discovery bounded,
-2. reject untrusted instructions,
-3. strip the secret,
-4. extract the actual bug report,
-5. compare against a bounded local issue fixture,
-6. produce an exact GitHub issue preview, and
-7. stop at `draft_ready` rather than writing anything.
+1. **Unique report + embedded instruction + synthetic secret** → sanitized `draft_ready` preview, no write.
+2. **Likely duplicate** → `duplicate_candidate`, no write.
+3. **Suspicious scan state** → `blocked_scan`, body not interpreted.
 
-Expected final state:
+The unique scenario verifies that inbound content cannot change the trusted target repository and that no write occurs before explicit approval.
+
+Expected approval boundary:
 
 ```text
-STATE: draft_ready — no GitHub write performed; fresh approval required.
+APPROVAL GATE: no GitHub write performed; fresh approval required.
 ```
 
 ## Live workflow
@@ -121,7 +122,7 @@ STATE: draft_ready — no GitHub write performed; fresh approval required.
 - `From` alone is never treated as authentication.
 - Mermail MCP arguments remain native structured objects rather than stringified JSON.
 
-See [`skills/mermail-github-intake/references/security.md`](skills/mermail-github-intake/references/security.md) for the threat model.
+See [`skills/mermail-github-intake/references/security.md`](skills/mermail-github-intake/references/security.md) for the full threat model.
 
 ## Repository layout
 
@@ -135,20 +136,30 @@ skills/mermail-github-intake/
     └── workflow.md
 
 demo/
-├── inbound-report.json
-├── existing-issues.json
+├── cases.json
 └── demo-output.txt
 
 scripts/
 ├── demo.mjs
 └── validate.mjs
+
+site/
+├── index.html
+├── styles.css
+└── app.js
 ```
+
+## Validation
+
+GitHub Actions runs `npm test` on every push and pull request. The current standalone repo has passed the validator and deterministic adversarial demo.
 
 ## Status
 
 - Community companion skill: ready
 - Current Mermail authoring/security conventions: followed
-- Deterministic adversarial demo: included
+- Deterministic adversarial demo: passing in CI
+- Interactive judge demo: deployed
+- Official companion idea: opened
 - Live Mermail/Codex smoke-test checklist: see `DEMO.md`
 - Superteam submission notes: see `SUBMISSION.md`
 

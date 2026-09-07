@@ -2,11 +2,11 @@
 
 ## One-line pitch
 
-**Mermail GitHub Intake turns an untrusted email bug report into an evidence-linked GitHub issue whose exact effect is SHA-256 approval-bound and idempotently reconciled instead of blindly retried.**
+**Mermail GitHub Intake turns untrusted inbound bug/feature email into evidence-grounded, duplicate-aware GitHub work with an exact approval boundary and one-write reconciliation instead of blind retry.**
 
 ## Short description
 
-A reusable Mermail Agent Skill for engineering intake. It reads a bounded, scan-gated Mermail report; records sender-authentication and evidence coverage; strips prompt-injection instructions, secrets, and unnecessary reporter PII; checks open/closed GitHub issues for duplicates; freezes the exact issue effect; binds fresh approval to a deterministic fingerprint; creates at most once; and reconciles ambiguous writes by that fingerprint. Optional reporter acknowledgement is a separately approved Mermail effect.
+A reusable Mermail Agent Skill for engineering intake. It reads a bounded, scan-gated Mermail report; preserves sender-authentication and evidence coverage; strips prompt-injection instructions, secrets, and unnecessary reporter PII; applies report-type actionability rules; checks the exact GitHub repository for likely duplicates; freezes the exact public issue effect; creates at most once after approval; and reconciles ambiguous writes using the stable Mermail source identity plus approved title. Missing information can produce an unsent Mermail clarification draft, and reporter acknowledgement remains a separate effect after GitHub creation.
 
 ## AI client
 
@@ -17,25 +17,25 @@ Codex.
 - Standalone source: https://github.com/omeriadon/mermail-github-intake
 - Interactive judge demo: https://mermail-github-intake-omeriadons-projects.vercel.app
 - Live Mermail proof: https://github.com/omeriadon/mermail-github-intake/blob/main/LIVE_TEST.md
-- Mermail companion discussion: https://github.com/Nudgen-Marketing/mermail-skills/issues/190
-- Skill: `skills/mermail-github-intake/SKILL.md`
-- Security contract: `skills/mermail-github-intake/references/security.md`
-- Tool contract: `skills/mermail-github-intake/references/tools.md`
-- Deterministic proof: `npm test && npm run demo`
-- Video walkthrough/script: `DEMO.md`
-- Required upstream Mermail PR: added before final submission
-- Required X demo URL: added before final submission
+- Required upstream Mermail PR: https://github.com/Nudgen-Marketing/mermail-skills/pull/191
+- Proposal/background: https://github.com/Nudgen-Marketing/mermail-skills/issues/190
+- Final video plan: `VIDEO.md`
+- Required X demo URL: added after recording
 
 ## Why this is not another inbox triager
 
 The workflow is specialized around a high-risk seam: **public email evidence becoming a public engineering mutation**.
 
-It adds four reusable guarantees beyond extraction:
+It adds reusable guarantees beyond extraction:
 
-1. **Evidence coverage** — omitted/truncated Mermail content remains explicitly partial; missing bug facts are never invented.
-2. **Duplicate/source identity** — source markers distinguish exact replay from semantic similarity.
-3. **Fingerprint-bound approval** — repository, title, body, labels, and Mermail source IDs are SHA-256 bound; any post-preview mutation returns `approval_stale`.
-4. **One-write reconciliation** — a timeout/502/ambiguous create is never automatically replayed. The agent searches the fingerprint marker and returns confirmed `created` or `write_uncertain`.
+1. **Authority separation** — inbound mail can provide evidence but cannot select the repository, labels, recipients, tools, or approval state.
+2. **Actionability by report type** — bugs require a concrete symptom plus useful evidence/context; feature requests require a requested capability plus intended outcome. Missing boilerplate is not invented.
+3. **Evidence coverage** — explicit, derived, missing, conflicting, withheld, and partial evidence remain distinguishable.
+4. **Duplicate/source identity** — the stable Mermail thread/message identity detects exact replay before semantic duplicate reasoning.
+5. **Exact effect approval** — repository, complete sanitized body, title, labels, and source identity are frozen and shown before the external GitHub effect. Any change requires a new preview.
+6. **One-write reconciliation** — timeout/502/ambiguous create results are never automatically replayed. One bounded repository read confirms `created` or returns `write_uncertain`.
+7. **Clarification/resume** — missing evidence can produce an unsent Mermail draft, then a later reporter response resumes the same bounded thread without inheriting GitHub approval.
+8. **Separate effects** — GitHub creation and reporter-email delivery never share approval.
 
 When Mermail Composio GitHub is connected, the skill discovers the relevant capability and inspects its live schema/`risk`/`allowed`/`connected` state before execution rather than inventing provider action names. Host GitHub tools and `gh` remain fallbacks.
 
@@ -58,69 +58,69 @@ Observed result:
 - bounded GitHub duplicate search found no match;
 - exact issue preview returned;
 - zero GitHub writes before approval;
-- terminal state `draft_ready` waiting for fresh approval.
+- terminal state `draft_ready` waiting for approval.
 
 See `LIVE_TEST.md` for the safe evidence record.
 
-## Deterministic proof suite
+## Validation
 
-Seven scenarios exercise both happy-path and failure-state contracts:
+The upstream proposal is intentionally narrow and Mermail-native:
 
-1. adversarial clean report → `draft_ready`, zero writes;
-2. strong semantic duplicate → `duplicate_candidate`;
-3. unsafe scan → `blocked_scan`;
-4. materially truncated evidence → `needs_information`;
-5. same source marker → exact duplicate;
-6. payload mutation after approval → `approval_stale`, zero writes;
-7. ambiguous write → one create attempt, fingerprint reconciliation, zero automatic retries.
+- 10 changed files total;
+- no changes to Mermail's validator implementation, release/version files, or website;
+- new skill package + root routing/catalog integration + focused scenarios only;
+- local upstream `npm test` passes: **17 skills and 71 business tools validated**;
+- `git diff --check` passes.
 
-GitHub Actions executes the validator/demo on each push.
+The focused upstream scenarios cover routing, clean happy path, feature-request actionability, prompt-injection resistance, scan failure, partial coverage, clarification/resume, duplicate blocking, multi-issue split handling, exact approval/create, uncertain-write reconciliation, and unsent acknowledgement.
 
 ## Demo-video plan
 
-The 2–5 minute English video will show the actual skill, not a code walkthrough:
+The final 2–5 minute English video will show the actual skill, not a code walkthrough:
 
-1. show the ready Mermail inbox and delivered adversarial test report;
-2. show the exact `$mermail-github-intake` prompt in Codex;
-3. show Mermail MCP tools being used and `scan_status: clean`;
-4. show the injected repository/publish instruction and synthetic credential being excluded;
-5. show the exact GitHub preview, duplicate result, coverage, and approval fingerprint;
-6. approve exactly that fingerprint;
-7. show one GitHub issue creation and the resulting issue URL;
-8. open the issue and show the source/fingerprint marker and absence of the injected/secret content;
-9. finish on the interactive demo/proof-suite summary.
+1. show the real Mermail test report containing both engineering evidence and adversarial instructions;
+2. invoke `$mermail-github-intake` in a fresh Codex session;
+3. show Mermail safe/clean reads and source identity;
+4. show injected repository/publish instructions ignored and the synthetic credential withheld;
+5. show bounded duplicate checking and the exact sanitized GitHub preview;
+6. approve exactly that visible effect;
+7. show one real GitHub issue creation and confirm the resulting issue URL;
+8. open the public issue and verify the malicious/credential content is absent while the Mermail source trace is present;
+9. save an acknowledgement draft in the source Mermail thread and show that it remains unsent.
 
-The X post will tag `@Mermailapp` and link the public upstream PR.
+The X post will attach this video, tag `@Mermailapp`, name the skill, mention Codex, and link PR #191.
 
 ## Judging fit
 
 ### Skill quality
 
-Current Mermail frontmatter/tool contracts, explicit state machine, separate security/tools/workflow references, exact examples, automated validation.
+Current Mermail frontmatter/tool contracts, explicit state model, separate security/tools/workflows references, focused examples, upstream validation, and a deliberately small integration diff.
 
 ### Working demo
 
-Already proven live through Mermail MCP up to the deliberate approval boundary. The final recording adds the explicitly approved one-write completion.
+Already proven live through Mermail MCP up to the deliberate approval boundary. The final recording adds the explicitly approved one-write completion plus the unsent acknowledgement loop.
 
 ### Reusability
 
-Any engineering team can point the skill at a Mermail mailbox + GitHub repository. It does not depend on fixture-specific tool names or a proprietary local service.
+Any engineering team can point the skill at a Mermail mailbox + GitHub repository. It does not depend on fixture-specific provider slugs or a proprietary local service.
 
 ### Innovation
 
-The innovation is not “email creates issue”; it is **effect integrity across an adversarial intake boundary**: coverage provenance, exact-source deduplication, cryptographic approval binding, stale-approval rejection, and safe uncertain-write reconciliation.
+The innovation is not “email creates issue”; it is **effect integrity across an adversarial intake boundary**: evidence provenance, actionability without fabrication, exact-source deduplication, explicit effect freezing, one-write execution, safe uncertain-write reconciliation, and separately authorized reporter communication.
 
 ## Final checklist
 
-- [x] Reusable, well-documented `SKILL.md`
+- [x] Reusable, documented `SKILL.md`
 - [x] Current Mermail MCP/security conventions
 - [x] Public standalone repo
-- [x] Automated deterministic proof suite
+- [x] Automated standalone proof suite
 - [x] Live Mermail/Codex pre-write run
 - [x] Interactive demo deployed
-- [x] Mermail companion issue opened
-- [ ] Public PR targeting `Nudgen-Marketing/mermail-skills`
-- [ ] Final approved live issue creation verified
-- [ ] 2–5 minute English demo posted on X and `@Mermailapp` tagged
-- [ ] X video URL added here/upstream PR
+- [x] Public PR targeting `Nudgen-Marketing/mermail-skills` (#191)
+- [x] Upstream validation passes locally (17 skills / 71 business tools)
+- [ ] Final approved live issue creation verified on camera
+- [ ] Unsent Mermail acknowledgement draft shown on camera
+- [ ] 2–5 minute English demo rendered and posted on X with `@Mermailapp`
+- [ ] X video URL added here and to PR #191
+- [ ] PR #191 marked ready for review
 - [ ] Superteam submission filed with PR, video, description, and Codex client

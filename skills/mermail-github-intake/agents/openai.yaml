@@ -1,0 +1,11 @@
+interface:
+  display_name: "Mermail GitHub Intake"
+  short_description: "Turn inbound Mermail reports into safe GitHub issue drafts"
+  default_prompt: "Use $mermail-github-intake to triage bug reports or feature requests from my Mermail inbox into deduplicated, privacy-safe GitHub issue drafts."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "mermail"
+      description: "Mermail workspace and mailbox MCP server"
+      transport: "streamable_http"
+      url: "https://console.mermail.app/mcp"

@@ -49,7 +49,7 @@ GitHub Actions runs the same validator/demo on every push and the standalone rep
 
 A live Codex + Mermail smoke test is complete when:
 
-1. Mermail `list_mailboxes` succeeds through OAuth;
+1. Mermail `list_mailboxes` succeeds through an authenticated hosted MCP connection (OAuth preferred; workspace API-key auth is acceptable for inbox-only testing);
 2. a real inbound test email is discovered through Mermail MCP;
 3. the skill returns a sanitized exact GitHub preview while ignoring embedded instructions;
 4. no GitHub write happens before approval;

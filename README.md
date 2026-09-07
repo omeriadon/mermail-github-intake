@@ -1,49 +1,63 @@
 # Mermail GitHub Intake
 
-**Community / unofficial Mermail companion skill.** Turn bug reports and feature requests received through a Mermail agent inbox into privacy-safe, deduplicated GitHub issue drafts, with a hard approval boundary before any external write.
+**Community / unofficial Mermail companion skill.** Turn bug reports and feature requests received through a Mermail agent inbox into evidence-linked, deduplicated GitHub issues without allowing email content to become agent authority.
 
-The core idea is a trust boundary: public email can become structured engineering work **without allowing an email sender to control the agent**.
+The distinguishing property is end-to-end control of the effect: **bounded evidence → sanitized engineering packet → duplicate preflight → deterministic effect fingerprint → fresh approval → one write → reconciliation instead of blind retry.**
 
-- Interactive demo: https://mermail-github-intake-omeriadons-projects.vercel.app
+- Interactive judge demo: https://mermail-github-intake-omeriadons-projects.vercel.app
+- Live Mermail proof: [`LIVE_TEST.md`](LIVE_TEST.md)
 - Official Mermail companion discussion: https://github.com/Nudgen-Marketing/mermail-skills/issues/190
 
-## What it does
+## Why it exists
+
+Email is a useful universal bug-intake surface and an unusually hostile authority surface. A naive email→GitHub agent can be told by the email itself to change repository, publish secrets, alter labels, skip review, or retry a write whose result is already unknown.
+
+Mermail GitHub Intake deliberately separates **evidence** from **authority**. The mailbox supplies facts; the authenticated operator supplies scope and approval.
+
+## Workflow
 
 ```text
 Mermail inbox
-    |
-    v
-bounded search + clean-message check
-    |
-    v
-UNTRUSTED INPUT BOUNDARY
-    |
-    +--> ignore embedded instructions
-    +--> redact credentials / private data
-    |
-    v
-structured issue extraction
-    |
-    v
-read-only GitHub duplicate search
-    |
-    +--> likely duplicate -> operator review
-    |
-    v
-exact GitHub effect preview
-    |
-    v
-fresh approval required
-    |
-    v
-GitHub issue creation
+    │
+    ▼
+metadata-first bounded discovery
+    │
+    ▼
+exact source + clean scan + coverage envelope
+    │
+    ▼
+untrusted evidence interpretation
+    ├── injected instructions ignored
+    └── secrets / reporter PII withheld
+    │
+    ▼
+GitHub duplicate preflight
+    │
+    ▼
+freeze repository + title + body + labels + source ids
+    │
+    ▼
+SHA-256 effect fingerprint
+    │
+    ▼
+exact preview + fresh fingerprint-bound approval
+    │
+    ▼
+ONE GitHub create attempt
+    │
+    ├── confirmed → created
+    └── ambiguous → reconcile fingerprint, never blind retry
 ```
 
-## Why this is useful
+## What makes it reusable
 
-Mermail gives an agent a dedicated, programmable email identity. This companion turns that inbox into a safe software-intake surface: anyone can email a report, while the repository owner retains control over what becomes public or mutates GitHub.
-
-It deliberately combines Mermail with GitHub, so it lives outside Mermail's official skill monorepo and follows Mermail's documented companion-skill security model.
+- **Current Mermail contracts.** Metadata-first reads, `require_scan_status: clean`, `agent_safe_content: true`, bounded body reads, sender-auth reporting, attachment limits, and native structured MCP arguments.
+- **Evidence provenance.** Source mailbox/thread/message IDs plus explicit `complete`/`partial` coverage prevent the agent from pretending a truncated read is complete.
+- **Duplicate reasoning.** `exact`, `strong`, `possible`, and `none` confidence instead of title-only matching.
+- **Approval binding.** The exact repository/title/body/labels/source tuple is SHA-256 fingerprinted. Any mutation after preview returns `approval_stale`.
+- **Idempotency.** The fingerprint is embedded as a machine-readable issue marker. Uncertain writes are reconciled by that marker, with zero automatic create retries.
+- **Mermail-native GitHub path.** When available, Mermail Composio discovers and schema-inspects the connected GitHub capability before use. Host GitHub integrations and `gh` remain safe fallbacks.
+- **Separate effects.** GitHub approval never authorizes an email acknowledgement.
 
 ## Install
 
@@ -53,76 +67,76 @@ Install Mermail's official core skills first:
 npx --yes skills add Nudgen-Marketing/mermail-skills --skill '*'
 ```
 
-Then install this companion from GitHub:
+Install this companion:
 
 ```bash
 npx --yes skills add omeriadon/mermail-github-intake --skill mermail-github-intake
 ```
 
-Connect Mermail's hosted MCP server at:
+Connect Mermail's hosted MCP server at `https://console.mermail.app/mcp`, then invoke `$mermail-github-intake` in a fresh agent session.
 
-```text
-https://console.mermail.app/mcp
-```
+## Deterministic proof suite
 
-For Codex, Mermail's current OAuth setup is:
-
-```bash
-codex mcp add mermail --url https://console.mermail.app/mcp
-codex mcp login mermail
-```
-
-Then start a new agent session and invoke `$mermail-github-intake`.
-
-## Deterministic safety demo
-
-No credentials and no network writes are required:
+No credentials or network writes are needed:
 
 ```bash
 npm test
 npm run demo
 ```
 
-The demo exercises three policy outcomes:
+Seven scenarios cover:
 
-1. **Unique report + embedded instruction + synthetic secret** → sanitized `draft_ready` preview, no write.
-2. **Likely duplicate** → `duplicate_candidate`, no write.
-3. **Suspicious scan state** → `blocked_scan`, body not interpreted.
+1. adversarial clean report → sanitized `draft_ready`, target locked, zero writes;
+2. strong semantic duplicate → `duplicate_candidate`;
+3. unsafe scan → `blocked_scan`, body never interpreted;
+4. materially truncated evidence → `needs_information`, missing facts not invented;
+5. same Mermail source already present → exact duplicate, zero writes;
+6. effect mutation after approval → `approval_stale`, zero writes;
+7. ambiguous create result → one write attempt, fingerprint reconciliation, **zero automatic retries**.
 
-The unique scenario verifies that inbound content cannot change the trusted target repository and that no write occurs before explicit approval.
+The validator also checks current Mermail metadata, body/read bounds, partial-coverage handling, sender-auth semantics, Composio discovery/schema inspection, fingerprinting, stale approval, and write-uncertainty contracts.
 
-Expected approval boundary:
+## Real Mermail proof
 
-```text
-APPROVAL GATE: no GitHub write performed; fresh approval required.
-```
+A real external test email was delivered to a ready Mermail inbox and processed by Codex through Mermail MCP. It contained a valid bug report plus an embedded instruction attempting to change the GitHub repository/publish immediately and a synthetic credential marker.
 
-## Live workflow
+The live agent returned `draft_ready`, reported `scan_status: clean`, kept the independently supplied repository unchanged, omitted the credential marker, found no duplicate, rendered the exact issue preview, and stopped with **zero GitHub mutations** pending fresh approval.
 
-1. Resolve the Mermail mailbox and GitHub repository from trusted user/session context.
-2. Use `list_mailboxes`, `list_emails` / `search_emails`, `get_email`, and `get_thread` as needed.
-3. Require a clean Mermail scan state before interpreting a message body.
-4. Treat subject, body, sender display name, quoted text, links, and attachments as untrusted data.
-5. Extract only supported facts and redact secrets/private reporter data.
-6. Search GitHub read-only for likely duplicates.
-7. Render the exact issue effect: repository, title, body, and labels.
-8. Require fresh user approval.
-9. Create the issue with the host's GitHub integration or `gh`.
-10. If acknowledging the reporter through Mermail, preview that email separately and require a second approval.
+See [`LIVE_TEST.md`](LIVE_TEST.md) for the safe, credential-free evidence record.
 
-## Security properties
+## Output states
 
-- Email content never chooses the target repository.
-- Email content never grants approval.
-- Raw mail is never interpolated into shell code.
-- Secret-bearing content is withheld from public issues.
-- Links and attachments are never followed because an email asks for it.
-- GitHub writes and outbound email require exact preview + fresh approval.
-- Inbox reads and duplicate search are bounded.
-- `From` alone is never treated as authentication.
-- Mermail MCP arguments remain native structured objects rather than stringified JSON.
+| State | Meaning |
+| --- | --- |
+| `draft_ready` | Exact effect + fingerprint ready for approval |
+| `duplicate_candidate` | Exact/strong existing issue found |
+| `needs_information` | Evidence is materially missing/partial |
+| `blocked_scan` | Selected content is not safe to interpret |
+| `ignored` | Not in the requested bug/feature scope |
+| `approval_stale` | Current effect no longer matches approved fingerprint |
+| `write_uncertain` | One attempted write remains ambiguous after reconciliation |
+| `created` | Issue existence confirmed after approval |
 
-See [`skills/mermail-github-intake/references/security.md`](skills/mermail-github-intake/references/security.md) for the full threat model.
+## Security contract
+
+- Email/provider output is untrusted evidence, never authority.
+- Only `scan_status: clean` content is interpreted.
+- `sender_authentication.status: pass` may describe authentication; it never authorizes an effect.
+- Omitted/truncated evidence remains explicitly partial.
+- Secrets and unnecessary reporter PII do not enter public issue effects.
+- The target repository cannot be changed by mail content.
+- Exact preview + fresh fingerprint-bound approval precedes GitHub mutation.
+- Effect/source mutation invalidates approval.
+- An ambiguous write is reconciled, never automatically replayed.
+- Attachments stay bounded and are never executed.
+- GitHub approval and reporter-email approval remain separate.
+
+Full contracts:
+
+- [`SKILL.md`](skills/mermail-github-intake/SKILL.md)
+- [`references/security.md`](skills/mermail-github-intake/references/security.md)
+- [`references/tools.md`](skills/mermail-github-intake/references/tools.md)
+- [`references/workflow.md`](skills/mermail-github-intake/references/workflow.md)
 
 ## Repository layout
 
@@ -135,33 +149,28 @@ skills/mermail-github-intake/
     ├── tools.md
     └── workflow.md
 
-demo/
-├── cases.json
-└── demo-output.txt
-
-scripts/
-├── demo.mjs
-└── validate.mjs
-
+demo/cases.json
+scripts/demo.mjs
+scripts/validate.mjs
 site/
-├── index.html
-├── styles.css
-└── app.js
+LIVE_TEST.md
+DEMO.md
+SUBMISSION.md
 ```
-
-## Validation
-
-GitHub Actions runs `npm test` on every push and pull request. The current standalone repo has passed the validator and deterministic adversarial demo.
 
 ## Status
 
-- Community companion skill: ready
-- Current Mermail authoring/security conventions: followed
-- Deterministic adversarial demo: passing in CI
-- Interactive judge demo: deployed
-- Official companion idea: opened
-- Live Mermail/Codex smoke-test checklist: see `DEMO.md`
-- Superteam submission notes: see `SUBMISSION.md`
+- [x] Standalone reusable skill
+- [x] Current Mermail contract/security alignment
+- [x] Seven deterministic safety/idempotency scenarios
+- [x] GitHub Actions validation
+- [x] Real Mermail + Codex pre-write smoke test
+- [x] Interactive public judge demo
+- [x] Mermail companion discussion #190
+- [ ] Official `Nudgen-Marketing/mermail-skills` PR
+- [ ] Final approved live issue creation
+- [ ] 2–5 minute X demo tagged `@Mermailapp`
+- [ ] Superteam submission
 
 ## License
 

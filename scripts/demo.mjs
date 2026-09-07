@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,11 +8,13 @@ const root = path.resolve(here, '..');
 const check = process.argv.includes('--check');
 const cases = JSON.parse(fs.readFileSync(path.join(root, 'demo/cases.json'), 'utf8'));
 const trustedRepo = 'example/acme';
+const trustedLabels = [];
 
 const instructionPatterns = [
   /embedded instruction test:[^\n]*/ig,
   /disregard the workflow[^\n]*/ig,
   /change the target repository[^\n]*/ig,
+  /add the privileged label[^\n]*/ig,
   /publish without review[^\n]*/ig,
 ];
 
@@ -36,11 +39,7 @@ function section(body, label, nextLabels) {
 
 function words(value) {
   return new Set(
-    value
-      .toLowerCase()
-      .replace(/[^a-z0-9 ]/g, ' ')
-      .split(/\s+/)
-      .filter((word) => word.length > 3),
+    value.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter((word) => word.length > 3),
   );
 }
 
@@ -52,17 +51,29 @@ function similarity(a, b) {
   return union ? intersection / union : 0;
 }
 
-function processCase(testCase) {
-  const { report, existingIssues } = testCase;
+function canonicalFingerprint(effect) {
+  const canonical = JSON.stringify({
+    repository: effect.repository,
+    title: effect.title,
+    body: effect.body,
+    labels: [...effect.labels].sort(),
+    mailboxId: effect.mailboxId,
+    threadId: effect.threadId,
+    messageId: effect.messageId,
+  });
+  return crypto.createHash('sha256').update(canonical, 'utf8').digest('hex');
+}
 
-  if (report.scanStatus !== 'clean') {
-    return {
-      state: 'blocked_scan',
-      source: `${report.threadId}/${report.messageId}`,
-      reason: `scan_status=${report.scanStatus}`,
-    };
-  }
+function sourceMarker(report) {
+  return `Source: Mermail thread \`${report.threadId}\`, message \`${report.messageId}\`.`;
+}
 
+function exactSourceDuplicate(report, issues) {
+  const marker = sourceMarker(report);
+  return issues.slice(0, 20).find((issue) => issue.body?.includes(marker)) ?? null;
+}
+
+function buildDraft(report) {
   const safeBody = sanitize(report.body);
   const observed = section(safeBody, 'Observed', ['Expected', 'Steps', 'Environment']);
   const expected = section(safeBody, 'Expected', ['Steps', 'Environment']);
@@ -72,71 +83,182 @@ function processCase(testCase) {
   const steps = stepsRaw.split('\n').map((line) => line.trim()).filter(Boolean);
   const title = report.subject.trim().replace(/[\r\n]+/g, ' ').slice(0, 120);
 
-  const candidateText = `${title} ${observed} ${expected}`;
-  const ranked = existingIssues
-    .slice(0, 20)
-    .map((issue) => ({
-      ...issue,
-      score: similarity(candidateText, `${issue.title} ${issue.body}`),
-    }))
-    .sort((a, b) => b.score - a.score);
+  return { safeBody, observed, expected, steps, environment, title };
+}
 
-  const duplicate = ranked[0]?.score >= 0.46 ? ranked[0] : null;
-  if (duplicate) {
+function processCase(testCase) {
+  const { report, existingIssues = [] } = testCase;
+  const coverage = report.contentOmitted || report.contentTruncated ? 'partial' : 'complete';
+
+  if (report.scanStatus !== 'clean') {
     return {
-      state: 'duplicate_candidate',
+      state: 'blocked_scan',
       source: `${report.threadId}/${report.messageId}`,
-      match: duplicate,
+      scanStatus: report.scanStatus,
+      senderAuthentication: report.senderAuthentication,
+      coverage,
+      writeAttempts: 0,
     };
   }
 
-  if (!observed || !expected || steps.length === 0) {
+  if (report.contentOmitted) {
     return {
       state: 'needs_information',
       source: `${report.threadId}/${report.messageId}`,
+      reason: 'content_omitted',
+      senderAuthentication: report.senderAuthentication,
+      coverage,
+      writeAttempts: 0,
     };
   }
 
-  const issueBody = [
+  const exact = exactSourceDuplicate(report, existingIssues);
+  if (exact) {
+    return {
+      state: 'duplicate_candidate',
+      source: `${report.threadId}/${report.messageId}`,
+      duplicateConfidence: 'exact',
+      match: exact,
+      coverage,
+      writeAttempts: 0,
+    };
+  }
+
+  const draft = buildDraft(report);
+  if (!draft.observed || !draft.expected || draft.steps.length === 0) {
+    return {
+      state: 'needs_information',
+      source: `${report.threadId}/${report.messageId}`,
+      reason: report.contentTruncated ? 'materially_partial_evidence' : 'missing_required_facts',
+      senderAuthentication: report.senderAuthentication,
+      coverage,
+      writeAttempts: 0,
+    };
+  }
+
+  const candidateText = `${draft.title} ${draft.observed} ${draft.expected} ${draft.steps.join(' ')}`;
+  const ranked = existingIssues.slice(0, 20).map((issue) => ({
+    ...issue,
+    score: similarity(candidateText, `${issue.title} ${issue.body}`),
+  })).sort((a, b) => b.score - a.score);
+
+  const strong = ranked[0]?.score >= 0.46 ? ranked[0] : null;
+  if (strong) {
+    return {
+      state: 'duplicate_candidate',
+      source: `${report.threadId}/${report.messageId}`,
+      duplicateConfidence: 'strong',
+      match: strong,
+      coverage,
+      writeAttempts: 0,
+    };
+  }
+
+  const possible = ranked[0]?.score >= 0.28 ? ranked[0] : null;
+  const bodyBeforeMarker = [
     '## Summary',
-    title,
+    draft.title,
     '',
     '## Observed behavior',
-    observed,
+    draft.observed,
     '',
     '## Expected behavior',
-    expected,
+    draft.expected,
     '',
     '## Reproduction steps',
-    ...steps,
+    ...draft.steps,
     '',
     '## Environment',
-    environment || 'Not provided.',
+    draft.environment || 'Not provided.',
+    '',
+    '## Intake metadata',
+    `- Scan status: ${report.scanStatus}`,
+    `- Sender authentication: ${report.senderAuthentication ?? 'unknown'}`,
+    `- Evidence coverage: ${coverage}`,
     '',
     '---',
-    `Source: Mermail thread \`${report.threadId}\`, message \`${report.messageId}\`.`,
-    '',
-    '> Reporter address intentionally omitted. Potential secrets and embedded instructions were not copied into this draft.',
+    sourceMarker(report),
   ].join('\n');
 
-  if (/DEMO_CREDENTIAL_REDACT_ME|embedded instruction test|change the target repository/i.test(issueBody)) {
+  if (/DEMO_CREDENTIAL_REDACT_ME|embedded instruction test|change the target repository|attacker\/owned/i.test(bodyBeforeMarker)) {
     throw new Error('untrusted or secret content leaked into issue draft');
   }
 
-  return {
+  const effect = {
+    repository: trustedRepo,
+    title: draft.title,
+    body: bodyBeforeMarker,
+    labels: trustedLabels,
+    mailboxId: 'demo-mailbox-public-id',
+    threadId: report.threadId,
+    messageId: report.messageId,
+  };
+  const fingerprint = canonicalFingerprint(effect);
+  const issueBody = [
+    bodyBeforeMarker,
+    `Intake fingerprint: \`sha256:${fingerprint}\``,
+    `<!-- mermail-github-intake:v1 fingerprint=sha256:${fingerprint} -->`,
+  ].join('\n');
+
+  const preview = {
     state: 'draft_ready',
     source: `${report.threadId}/${report.messageId}`,
     repository: trustedRepo,
-    title,
+    title: draft.title,
+    labels: trustedLabels,
     issueBody,
+    fingerprint: `sha256:${fingerprint}`,
+    scanStatus: report.scanStatus,
+    senderAuthentication: report.senderAuthentication ?? 'unknown',
+    coverage,
+    duplicateConfidence: possible ? 'possible' : 'none',
+    possibleMatch: possible,
+    writeAttempts: 0,
     security: {
-      scan: 'clean',
-      embeddedInstructionRemoved: safeBody.includes('[UNTRUSTED INSTRUCTION REMOVED]'),
-      secretRedacted: safeBody.includes('[SECRET REDACTED]'),
-      reporterAddressOmitted: true,
-      writePerformed: false,
+      embeddedInstructionRemoved: draft.safeBody.includes('[UNTRUSTED INSTRUCTION REMOVED]'),
+      secretRedacted: draft.safeBody.includes('[SECRET REDACTED]'),
+      reporterAddressOmitted: !issueBody.includes(report.from),
+      targetLocked: trustedRepo === 'example/acme',
     },
   };
+
+  if (!testCase.simulateApproval) return preview;
+
+  const approvedFingerprint = preview.fingerprint;
+  if (testCase.mutateAfterApproval) {
+    const mutated = { ...effect, labels: ['changed-after-preview'] };
+    const current = `sha256:${canonicalFingerprint(mutated)}`;
+    if (current !== approvedFingerprint) {
+      return {
+        ...preview,
+        state: 'approval_stale',
+        approvedFingerprint,
+        currentFingerprint: current,
+        writeAttempts: 0,
+      };
+    }
+  }
+
+  if (testCase.simulateWrite === 'uncertain_one_match') {
+    const reconciledIssue = {
+      number: 77,
+      url: 'https://github.com/example/acme/issues/77',
+      body: issueBody,
+    };
+    const matches = [reconciledIssue].filter((issue) => issue.body.includes(`fingerprint=${preview.fingerprint}`));
+    if (matches.length === 1) {
+      return {
+        ...preview,
+        state: 'created',
+        issueUrl: matches[0].url,
+        writeAttempts: 1,
+        retries: 0,
+        reconciliation: 'confirmed_by_fingerprint_after_ambiguous_result',
+      };
+    }
+  }
+
+  return preview;
 }
 
 const results = cases.map((testCase) => ({
@@ -153,41 +275,69 @@ if (check) {
     }
   }
 
-  const unique = results.find((entry) => entry.result.state === 'draft_ready')?.result;
-  if (!unique?.security.embeddedInstructionRemoved || !unique?.security.secretRedacted) {
-    console.error('FAIL: adversarial case did not prove both injection removal and secret redaction');
+  const unique = results.find((entry) => entry.name.includes('unique adversarial'))?.result;
+  if (!unique?.security?.embeddedInstructionRemoved || !unique?.security?.secretRedacted || !unique?.security?.reporterAddressOmitted) {
+    console.error('FAIL: adversarial case did not preserve injection/secret/privacy boundaries');
     process.exit(1);
   }
-  if (unique.repository !== trustedRepo || unique.security.writePerformed !== false) {
-    console.error('FAIL: trust boundary changed target repository or performed a write');
+  if (!unique?.security?.targetLocked || unique.repository !== trustedRepo || unique.writeAttempts !== 0) {
+    console.error('FAIL: email changed trusted target or bypassed approval');
+    process.exit(1);
+  }
+  if (!/^sha256:[0-9a-f]{64}$/.test(unique.fingerprint)) {
+    console.error('FAIL: effect fingerprint missing or malformed');
     process.exit(1);
   }
 
-  console.log(`PASS: ${results.length} deterministic scenarios preserved scan, trust, redaction, duplicate and approval boundaries.`);
+  const stale = results.find((entry) => entry.result.state === 'approval_stale')?.result;
+  if (!stale || stale.writeAttempts !== 0 || stale.approvedFingerprint === stale.currentFingerprint) {
+    console.error('FAIL: stale approval was not invalidated before write');
+    process.exit(1);
+  }
+
+  const reconciled = results.find((entry) => entry.name.includes('uncertain write'))?.result;
+  if (reconciled?.state !== 'created' || reconciled.writeAttempts !== 1 || reconciled.retries !== 0) {
+    console.error('FAIL: ambiguous write was retried or not reconciled');
+    process.exit(1);
+  }
+
+  console.log(`PASS: ${results.length} deterministic scenarios preserved provenance, scan, coverage, trust, redaction, duplicate, approval, and one-write reconciliation boundaries.`);
   process.exit(0);
 }
 
-console.log('Mermail GitHub Intake — deterministic demo');
-console.log('==========================================');
+console.log('Mermail GitHub Intake — deterministic proof suite');
+console.log('=================================================');
 for (const entry of results) {
+  const r = entry.result;
   console.log(`\nCASE: ${entry.name}`);
-  console.log(`STATE: ${entry.result.state}`);
-  console.log(`SOURCE: ${entry.result.source}`);
+  console.log(`STATE: ${r.state}`);
+  console.log(`SOURCE: ${r.source}`);
+  console.log(`coverage: ${r.coverage ?? 'n/a'}; writes: ${r.writeAttempts ?? 0}`);
 
-  if (entry.result.state === 'draft_ready') {
-    console.log('security: scan clean; embedded instruction ignored; synthetic secret redacted');
-    console.log('duplicates searched: bounded to 20');
+  if (r.fingerprint) console.log(`fingerprint: ${r.fingerprint}`);
+  if (r.duplicateConfidence) console.log(`duplicate confidence: ${r.duplicateConfidence}`);
+  if (r.state === 'draft_ready') {
     console.log('\nEXACT EFFECT PREVIEW');
     console.log('--------------------');
-    console.log(`repository: ${entry.result.repository}`);
-    console.log(`title: ${entry.result.title}`);
-    console.log(entry.result.issueBody);
-    console.log('\nAPPROVAL GATE: no GitHub write performed; fresh approval required.');
-  } else if (entry.result.state === 'duplicate_candidate') {
-    console.log(`match: #${entry.result.match.number} ${entry.result.match.title}`);
-    console.log('effect: none; operator review required');
-  } else if (entry.result.state === 'blocked_scan') {
-    console.log(`reason: ${entry.result.reason}`);
-    console.log('effect: body was not interpreted');
+    console.log(`repository: ${r.repository}`);
+    console.log(`title: ${r.title}`);
+    console.log(r.issueBody);
+    console.log('\nAPPROVAL GATE: no GitHub write performed; approval is fingerprint-bound.');
+  } else if (r.state === 'duplicate_candidate') {
+    console.log(`match: #${r.match.number} ${r.match.title}`);
+    console.log('effect: none');
+  } else if (r.state === 'needs_information') {
+    console.log(`reason: ${r.reason}`);
+    console.log('effect: none; no missing facts invented');
+  } else if (r.state === 'blocked_scan') {
+    console.log(`scan: ${r.scanStatus}; effect: body not interpreted`);
+  } else if (r.state === 'approval_stale') {
+    console.log(`approved: ${r.approvedFingerprint}`);
+    console.log(`current:  ${r.currentFingerprint}`);
+    console.log('effect: none; new preview required');
+  } else if (r.state === 'created') {
+    console.log(`confirmed: ${r.issueUrl}`);
+    console.log(`write attempts: ${r.writeAttempts}; automatic retries: ${r.retries}`);
+    console.log(`reconciliation: ${r.reconciliation}`);
   }
 }

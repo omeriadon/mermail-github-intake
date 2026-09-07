@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Interactive safety and idempotency demo for Mermail GitHub Intake." />
+  <meta name="description" content="Interactive safety and exact-effect demo for Mermail GitHub Intake." />
   <title>Mermail GitHub Intake — Live-safe engineering intake</title>
   <link rel="stylesheet" href="/site/styles.css" />
 </head>
@@ -17,7 +17,7 @@
     <section class="hero">
       <p class="eyebrow">Mermail → GitHub · one evidence packet · one approved effect</p>
       <h1>Turn inbox reports into issues.<br><em>Keep authority out of the inbox.</em></h1>
-      <p class="lead">A reusable Mermail skill that scan-gates and bounds email evidence, strips injected instructions and secrets, checks GitHub duplicates, fingerprints the exact effect, and makes uncertain writes idempotent instead of retrying blindly.</p>
+      <p class="lead">A reusable Mermail skill that scan-gates and bounds email evidence, strips injected instructions and secrets, checks GitHub duplicates, freezes the exact public effect for review, and reconciles uncertain writes instead of retrying blindly.</p>
       <div class="actions"><button id="run">Run safety demo</button><a href="#cases">Inspect guarantees ↓</a></div>
     </section>
 
@@ -26,9 +26,9 @@
       <i>→</i>
       <div><b>02</b><span>Evidence boundary</span><small>email = data, never authority</small></div>
       <i>→</i>
-      <div><b>03</b><span>GitHub preflight</span><small>duplicate + source marker</small></div>
+      <div><b>03</b><span>GitHub preflight</span><small>source + semantic duplicate check</small></div>
       <i>→</i>
-      <div><b>04</b><span>Fingerprint gate</span><small>approval binds exact effect</small></div>
+      <div><b>04</b><span>Exact approval gate</span><small>full effect shown before write</small></div>
     </section>
 
     <section class="demo" id="cases">
@@ -37,7 +37,7 @@
         <div class="meta-grid">
           <span>scan_status<strong>clean</strong></span>
           <span>sender_auth<strong>unknown</strong></span>
-          <span>coverage<strong>complete</strong></span>
+          <span>coverage<strong>explicit</strong></span>
           <span>read budget<strong>≤10k chars</strong></span>
         </div>
         <h2>Export freezes after attaching a 4K screenshot</h2>
@@ -51,10 +51,10 @@
         <div class="panel-title"><span>Agent result</span><code id="state">waiting</code></div>
         <div id="timeline" class="timeline">
           <p data-step="1"><i></i>Select exact clean Mermail source</p>
-          <p data-step="2"><i></i>Record sender auth + coverage limits</p>
-          <p data-step="3"><i></i>Strip instruction + credential marker</p>
+          <p data-step="2"><i></i>Record sender auth + evidence coverage</p>
+          <p data-step="3"><i></i>Ignore injected instruction + withhold credential</p>
           <p data-step="4"><i></i>Search ≤20 GitHub issues read-only</p>
-          <p data-step="5"><i></i>Freeze effect + compute SHA-256 fingerprint</p>
+          <p data-step="5"><i></i>Freeze repository + title + full body + source IDs</p>
           <p data-step="6"><i></i>Stop before the first GitHub write</p>
         </div>
         <div id="preview" class="preview" hidden>
@@ -63,7 +63,7 @@
             <div><dt>Repository</dt><dd>example/acme</dd></div>
             <div><dt>Title</dt><dd>Export freezes after attaching a 4K screenshot</dd></div>
             <div><dt>Duplicate</dt><dd>none in bounded search</dd></div>
-            <div><dt>Coverage</dt><dd>complete · scan clean · sender auth unknown</dd></div>
+            <div><dt>Coverage</dt><dd>explicit · scan clean · sender auth unknown</dd></div>
           </dl>
           <pre>## Observed behavior
 The export modal stays on Preparing forever after a 3840×2160 PNG is attached.
@@ -73,8 +73,8 @@ The PDF should finish exporting and include the screenshot.
 
 ---
 Source: Mermail thread `thr_demo_001`, message `msg_demo_001`.</pre>
-          <div class="fingerprint">Approval fingerprint <code id="fingerprint">computing…</code></div>
-          <div class="gate">draft_ready — 0 writes · approval only authorizes this fingerprint</div>
+          <div class="fingerprint">Frozen source <code>thr_demo_001 / msg_demo_001</code></div>
+          <div class="gate">draft_ready — 0 writes · any effect change requires a new preview</div>
         </div>
       </div>
     </section>
@@ -82,13 +82,13 @@ Source: Mermail thread `thr_demo_001`, message `msg_demo_001`.</pre>
     <section class="cases">
       <article><span>Guarantee 1</span><h3>Prompt injection cannot route</h3><p>Repository, labels, tools, recipients, and approval come from trusted session context—not the message body.</p><b>authority locked</b></article>
       <article><span>Guarantee 2</span><h3>Partial evidence stays partial</h3><p>Omitted or materially truncated content returns needs_information instead of invented reproduction details.</p><b>provenance bounded</b></article>
-      <article><span>Guarantee 3</span><h3>Approval cannot drift</h3><p>Repository, body, labels and Mermail source IDs are SHA-256 bound. Any change invalidates approval.</p><b>approval_stale</b></article>
-      <article><span>Guarantee 4</span><h3>Duplicate-aware</h3><p>Exact source/fingerprint matches and strong semantic matches block a second issue; uncertain overlap is surfaced.</p><b>duplicate_candidate</b></article>
-      <article><span>Guarantee 5</span><h3>One write, then reconcile</h3><p>Timeouts and ambiguous provider results trigger fingerprint lookup—not a second create attempt.</p><b>0 automatic retries</b></article>
+      <article><span>Guarantee 3</span><h3>Approval cannot drift</h3><p>The full public issue effect is frozen and shown. Repository, title, body, labels, or source changes require a new preview before writing.</p><b>exact effect boundary</b></article>
+      <article><span>Guarantee 4</span><h3>Duplicate-aware</h3><p>Exact Mermail source matches and strong semantic matches block a second issue; uncertain overlap is surfaced.</p><b>duplicate_candidate</b></article>
+      <article><span>Guarantee 5</span><h3>One write, then reconcile</h3><p>Timeouts and ambiguous provider results trigger one bounded lookup by source identity + approved title—not a second create attempt.</p><b>0 automatic retries</b></article>
       <article><span>Guarantee 6</span><h3>Mermail-native when possible</h3><p>Connected GitHub Composio actions are discovered and schema-inspected before use; host GitHub/gh remain fallbacks.</p><b>live schema first</b></article>
     </section>
 
-    <footer><p>Community / unofficial Mermail companion skill. <a href="https://github.com/Nudgen-Marketing/mermail-skills/issues/190">Mermail companion discussion #190</a> · <a href="https://github.com/Nudgen-Marketing/mermail-skills">official core skills</a>.</p></footer>
+    <footer><p>Community / unofficial Mermail companion skill. <a href="https://github.com/Nudgen-Marketing/mermail-skills/pull/191">upstream proposal #191</a> · <a href="https://github.com/Nudgen-Marketing/mermail-skills/issues/190">background #190</a> · <a href="https://github.com/Nudgen-Marketing/mermail-skills">official core skills</a>.</p></footer>
   </main>
   <script src="/site/app.js"></script>
 </body>

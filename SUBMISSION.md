@@ -24,13 +24,14 @@ Email is a universal intake surface, but it is also untrusted input. A naive ema
 ## Public deliverables
 
 - Source: https://github.com/omeriadon/mermail-github-intake
+- Interactive judge demo: https://mermail-github-intake-omeriadons-projects.vercel.app
+- Official Mermail companion discussion: https://github.com/Nudgen-Marketing/mermail-skills/issues/190
 - Skill: `skills/mermail-github-intake/SKILL.md`
 - OpenAI metadata: `skills/mermail-github-intake/agents/openai.yaml`
 - Security model: `skills/mermail-github-intake/references/security.md`
 - Deterministic demo: `npm test && npm run demo`
-- Live/demo walkthrough: `DEMO.md`
-- Interactive judge demo: `site/` (deployment URL added before submission)
-- Video demo: added before submission
+- Live/demo walkthrough and video script: `DEMO.md`
+- Video demo: added after the live smoke test is recorded
 
 ## Deterministic proof
 
@@ -41,6 +42,8 @@ The bundled test suite exercises three policy outcomes:
 3. suspicious Mermail scan state → `blocked_scan`, body not interpreted.
 
 The unique case asserts that the inbound message cannot change the trusted target repository and that no external write occurs before approval.
+
+GitHub Actions runs the same validator/demo on every push and the standalone repository is currently passing.
 
 ## Live proof contract
 
@@ -67,7 +70,8 @@ The skill follows Mermail's current authoring anti-pattern guidance: never trust
 - [x] Security references
 - [x] Deterministic adversarial demo
 - [x] Automated validation workflow
+- [x] Interactive judge demo deployed
+- [x] Official companion idea opened with Mermail maintainers
 - [ ] Live Mermail/Codex smoke test recorded
-- [ ] Interactive demo deployed
 - [ ] Video URL added
 - [ ] Submitted to Superteam Earn

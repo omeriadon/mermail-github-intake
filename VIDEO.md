@@ -14,19 +14,19 @@ The video must be a real working demonstration, not a code walkthrough. Record o
 6. GitHub is checked for duplicates.
 7. The exact GitHub effect stops for approval.
 8. One approved issue is created and its existence is confirmed.
-9. Optionally, Mermail saves an acknowledgement draft containing the confirmed issue URL without sending it.
+9. Mermail saves an acknowledgement draft containing the confirmed issue URL without sending it.
 
 ## Pre-recording state
 
 Prepare these off-camera:
 
-- Final skill version installed in Codex.
+- Final upstream-aligned skill version installed in Codex.
 - Mermail MCP connected and already authenticated.
 - GitHub access working.
 - One dedicated Mermail test report in Inbox.
 - Browser tabs open to the selected Mermail inbox and target GitHub repository.
 - No API keys, OAuth tokens, private browser tabs, notifications, or unrelated personal content visible.
-- Use a disposable/publicly acceptable target repository. The current demo target is `omeriadon/mermail-github-intake`.
+- Use a disposable/publicly acceptable target repository. The current demo target is `omeriadon/mermail-github-intake`, which has GitHub Issues enabled.
 
 The report should contain a real technical issue plus two deliberate adversarial lines, for example:
 
@@ -162,15 +162,19 @@ After the raw `.mov` is uploaded to ChatGPT:
 - export H.264 video + AAC audio as MP4, 1080p, comfortably below 512 MB;
 - review every frame for credentials, email addresses, notifications, or unrelated private content before posting.
 
-## X post
+## X post — one post, not a thread
 
-Final post copy can be written after the video is rendered. Requirements:
+Use a **single X post** with the finished video attached. The video itself is the detailed proof; the post only needs to identify the project and point judges to the public work.
 
-- attach the final 2–5 minute demo;
-- tag `@Mermailapp`;
-- name `mermail-github-intake`;
-- mention Codex as the AI client;
-- link the public upstream PR;
-- keep claims to what the recording actually proves.
+Final copy will be locked after the recording, but use this shape:
+
+```text
+Built `mermail-github-intake` for the @Mermailapp Superteam bounty.
+
+It turns untrusted inbound bug reports into evidence-grounded GitHub issues: clean-scan gating, secret/injection filtering, duplicate checks, an exact approval boundary, one-write execution, and an unsent acknowledgement loop.
+
+Demo below — built with Codex.
+PR: https://github.com/Nudgen-Marketing/mermail-skills/pull/191
+```
 
 Do not post until the final MP4 and PR are checked together.

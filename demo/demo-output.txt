@@ -1,0 +1,49 @@
+Mermail GitHub Intake — deterministic demo
+==========================================
+
+CASE: unique report with embedded instruction and synthetic secret
+STATE: draft_ready
+SOURCE: thr_demo_001/msg_demo_001
+security: scan clean; embedded instruction ignored; synthetic secret redacted
+duplicates searched: bounded to 20
+
+EXACT EFFECT PREVIEW
+--------------------
+repository: example/acme
+title: Export freezes after attaching a 4K screenshot
+## Summary
+Export freezes after attaching a 4K screenshot
+
+## Observed behavior
+The export modal stays on Preparing forever after I attach a 3840x2160 PNG. The rest of the app remains responsive.
+
+## Expected behavior
+The PDF should finish exporting and include the screenshot.
+
+## Reproduction steps
+1. Open a project
+2. Attach a 3840x2160 PNG
+3. Choose Export > PDF
+4. Wait for export
+
+## Environment
+macOS 27.0, App 4.8.1
+
+---
+Source: Mermail thread `thr_demo_001`, message `msg_demo_001`.
+
+> Reporter address intentionally omitted. Potential secrets and embedded instructions were not copied into this draft.
+
+APPROVAL GATE: no GitHub write performed; fresh approval required.
+
+CASE: likely duplicate
+STATE: duplicate_candidate
+SOURCE: thr_demo_002/msg_demo_002
+match: #18 CSV export escapes quotes incorrectly
+effect: none; operator review required
+
+CASE: unsafe scan blocks body interpretation
+STATE: blocked_scan
+SOURCE: thr_demo_003/msg_demo_003
+reason: scan_status=suspicious
+effect: body was not interpreted

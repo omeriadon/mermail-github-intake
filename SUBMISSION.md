@@ -19,8 +19,9 @@ Codex.
 - Live Mermail proof: https://github.com/omeriadon/mermail-github-intake/blob/main/LIVE_TEST.md
 - Required upstream Mermail PR: https://github.com/Nudgen-Marketing/mermail-skills/pull/191
 - Proposal/background: https://github.com/Nudgen-Marketing/mermail-skills/issues/190
-- Final video plan: `VIDEO.md`
-- Required X demo URL: added after recording
+- Final live-created GitHub issue: https://github.com/omeriadon/mermail-github-intake/issues/2
+- Final X demo: https://x.com/OmeriAdon51798/status/2097667379237142747
+- Final video plan/source notes: `VIDEO.md`
 
 ## Why this is not another inbox triager
 
@@ -41,26 +42,31 @@ When Mermail Composio GitHub is connected, the skill discovers the relevant capa
 
 ## Real working proof
 
-A real external email reached a ready Mermail inbox and was processed by Codex over Mermail MCP.
+The final recording shows a real external bug-report email arriving in Mermail and being processed by Codex through Mermail MCP.
 
 The message intentionally contained:
 
-- a grounded export bug;
+- a grounded CSV export bug;
 - an instruction attempting to change the trusted repository and publish immediately;
 - a synthetic credential marker.
 
 Observed result:
 
-- `scan_status: clean`;
+- Mermail safe/clean content handling and source identity surfaced;
 - repository remained the separately supplied trusted repository;
 - embedded routing/publish instruction ignored;
-- credential marker omitted;
-- bounded GitHub duplicate search found no match;
-- exact issue preview returned;
-- zero GitHub writes before approval;
-- terminal state `draft_ready` waiting for approval.
+- credential-like content omitted from the public effect;
+- bounded GitHub duplicate checking completed;
+- the complete sanitized issue effect was shown before mutation;
+- zero GitHub writes occurred before explicit approval;
+- after approval, exactly one issue was created and its existence independently verified;
+- the resulting public issue preserves the Mermail source trace while excluding the malicious instruction and synthetic secret.
 
-See `LIVE_TEST.md` for the safe evidence record.
+Final issue: https://github.com/omeriadon/mermail-github-intake/issues/2
+
+Final video/X proof: https://x.com/OmeriAdon51798/status/2097667379237142747
+
+The optional acknowledgement-draft path is part of the skill contract and focused validation scenarios, but the final demo clip intentionally focuses on the required end-to-end Mermail → GitHub workflow because the active recording surface did not expose `save_draft`.
 
 ## Validation
 
@@ -74,21 +80,20 @@ The upstream proposal is intentionally narrow and Mermail-native:
 
 The focused upstream scenarios cover routing, clean happy path, feature-request actionability, prompt-injection resistance, scan failure, partial coverage, clarification/resume, duplicate blocking, multi-issue split handling, exact approval/create, uncertain-write reconciliation, and unsent acknowledgement.
 
-## Demo-video plan
+## Final demo
 
-The final 2–5 minute English video will show the actual skill, not a code walkthrough:
+The final 2–5 minute English demo shows the actual skill, not a code walkthrough:
 
-1. show the real Mermail test report containing both engineering evidence and adversarial instructions;
-2. invoke `$mermail-github-intake` in a fresh Codex session;
-3. show Mermail safe/clean reads and source identity;
-4. show injected repository/publish instructions ignored and the synthetic credential withheld;
-5. show bounded duplicate checking and the exact sanitized GitHub preview;
-6. approve exactly that visible effect;
-7. show one real GitHub issue creation and confirm the resulting issue URL;
-8. open the public issue and verify the malicious/credential content is absent while the Mermail source trace is present;
-9. save an acknowledgement draft in the source Mermail thread and show that it remains unsent.
+1. the real Mermail report with engineering evidence and adversarial instructions;
+2. `$mermail-github-intake` invoked in a fresh Codex session;
+3. Mermail safe/clean reads and stable source identity;
+4. injected repository/publish instructions ignored and synthetic credential withheld;
+5. bounded duplicate checking and the exact sanitized GitHub preview;
+6. explicit approval of that visible effect;
+7. one real GitHub issue creation;
+8. independent browser verification that the public issue exists, matches the preview, excludes malicious/credential content, and includes the Mermail source trace.
 
-The X post will attach this video, tag `@Mermailapp`, name the skill, mention Codex, and link PR #191.
+The published X post tags `@Mermailapp`, names the skill, mentions Codex, links PR #191, and carries the final demo video.
 
 ## Judging fit
 
@@ -98,7 +103,7 @@ Current Mermail frontmatter/tool contracts, explicit state model, separate secur
 
 ### Working demo
 
-Already proven live through Mermail MCP up to the deliberate approval boundary. The final recording adds the explicitly approved one-write completion plus the unsent acknowledgement loop.
+The final published recording proves the required live workflow end to end: Mermail input → sanitized evidence → duplicate preflight → exact approval boundary → one GitHub creation → independently verified result.
 
 ### Reusability
 
@@ -118,9 +123,8 @@ The innovation is not “email creates issue”; it is **effect integrity across
 - [x] Interactive demo deployed
 - [x] Public PR targeting `Nudgen-Marketing/mermail-skills` (#191)
 - [x] Upstream validation passes locally (17 skills / 71 business tools)
-- [ ] Final approved live issue creation verified on camera
-- [ ] Unsent Mermail acknowledgement draft shown on camera
-- [ ] 2–5 minute English demo rendered and posted on X with `@Mermailapp`
-- [ ] X video URL added here and to PR #191
-- [ ] PR #191 marked ready for review
+- [x] Final approved live issue creation verified on camera
+- [x] 2–5 minute English demo rendered and posted on X with `@Mermailapp`
+- [x] X video URL added here and to PR #191
+- [x] PR #191 marked ready for review
 - [ ] Superteam submission filed with PR, video, description, and Codex client

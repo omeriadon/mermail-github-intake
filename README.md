@@ -4,6 +4,8 @@
 
 The core flow is: **bounded evidence → sanitized engineering record → duplicate preflight → exact effect preview → explicit approval → one write → reconciliation instead of blind retry.**
 
+- Final X demo: https://x.com/OmeriAdon51798/status/2097667379237142747
+- Final live-created issue: https://github.com/omeriadon/mermail-github-intake/issues/2
 - Interactive judge demo: https://mermail-github-intake-omeriadons-projects.vercel.app
 - Live Mermail proof: [`LIVE_TEST.md`](LIVE_TEST.md)
 - Upstream proposal: https://github.com/Nudgen-Marketing/mermail-skills/pull/191
@@ -93,11 +95,13 @@ The standalone proof suite covers adversarial mail, duplicate handling, scan fai
 
 ## Real Mermail proof
 
-A real external test email was delivered to a ready Mermail inbox and processed by Codex through Mermail MCP. It contained a valid bug report plus an embedded instruction attempting to change the GitHub repository/publish immediately and a synthetic credential marker.
+The final demo uses a real externally delivered bug-report email containing both valid engineering evidence and adversarial content. Codex processes it through Mermail MCP, keeps the separately supplied repository fixed, removes the credential-like marker and injected routing/publish instruction from the public effect, checks duplicates, stops before the write, then creates exactly one issue after explicit approval.
 
-The live agent returned `draft_ready`, reported `scan_status: clean`, kept the independently supplied repository unchanged, omitted the credential marker, found no duplicate, rendered the exact issue preview, and stopped with **zero GitHub mutations** pending approval.
+The resulting issue is independently visible at https://github.com/omeriadon/mermail-github-intake/issues/2 and preserves the Mermail source trace while excluding the malicious content.
 
-See [`LIVE_TEST.md`](LIVE_TEST.md) for the safe, credential-free evidence record.
+Final published demo: https://x.com/OmeriAdon51798/status/2097667379237142747
+
+See [`LIVE_TEST.md`](LIVE_TEST.md) for the earlier safe, credential-free pre-write smoke-test record.
 
 ## Output states
 
@@ -159,14 +163,14 @@ SUBMISSION.md
 - [x] Standalone reusable skill
 - [x] Current Mermail contract/security alignment
 - [x] Deterministic safety proof suite
-- [x] Real Mermail + Codex pre-write smoke test
+- [x] Real Mermail + Codex smoke test
 - [x] Interactive public judge demo
 - [x] Upstream Mermail proposal PR #191
 - [x] Upstream `npm test`: 17 skills / 71 business tools validated
-- [ ] Final approved live issue creation recorded and verified
-- [ ] 2–5 minute demo posted on X and `@Mermailapp` tagged
-- [ ] Video URL added to PR/submission docs
-- [ ] PR marked ready for review
+- [x] Final approved live issue creation recorded and verified
+- [x] 2–5 minute demo posted on X and `@Mermailapp` tagged
+- [x] Video URL added to PR/submission docs
+- [x] PR marked ready for review
 - [ ] Superteam submission filed
 
 ## License
